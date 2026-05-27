@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; }
+  
+  :root {
+    --sidebar-width: 240px;
+  }
+
+  body {
+    min-height: 100vh;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #e2e6f0; border-radius: 10px; }
+  ::-webkit-scrollbar-thumb:hover { background: #9db0ff; }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-4 py-2.5 bg-brand-600 hover:bg-brand-700 
+           text-white font-medium text-sm rounded-xl transition-all duration-150
+           shadow-sm hover:shadow-md active:scale-95;
+  }
+  
+  .btn-secondary {
+    @apply inline-flex items-center gap-2 px-4 py-2.5 bg-surface border border-surface-200 
+           hover:bg-surface-50 text-ink font-medium text-sm rounded-xl transition-all duration-150
+           shadow-card hover:shadow-card-hover active:scale-95;
+  }
+  
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 px-3 py-2 text-ink-muted hover:text-ink 
+           hover:bg-surface-100 font-medium text-sm rounded-lg transition-all duration-150;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 
+           text-white font-medium text-sm rounded-xl transition-all duration-150
+           shadow-sm hover:shadow-md active:scale-95;
+  }
+
+  .card {
+    @apply bg-surface rounded-2xl shadow-card border border-surface-200 p-5;
+  }
+
+  .input-field {
+    @apply w-full px-3.5 py-2.5 bg-surface border border-surface-200 rounded-xl text-sm
+           text-ink placeholder:text-ink-subtle focus:outline-none focus:ring-2 
+           focus:ring-brand-300 focus:border-brand-400 transition-all duration-150;
+  }
+
+  .label {
+    @apply block text-xs font-semibold text-ink-muted uppercase tracking-wide mb-1.5;
+  }
+
+  .badge-in {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-700 
+           text-xs font-semibold rounded-full;
+  }
+
+  .badge-out {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 bg-red-50 text-red-600 
+           text-xs font-semibold rounded-full;
+  }
+
+  .table-head {
+    @apply text-xs font-semibold text-ink-muted uppercase tracking-wide;
+  }
+}
