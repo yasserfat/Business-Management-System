@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fr">
-      <body className={`${outfit.variable} ${dmSans.variable} font-sans bg-surface-50 text-ink antialiased`}>
+      <body className={`${outfit.variable} ${dmSans.variable} font-sans bg-surface-50 text-ink antialiased overflow-hidden`}>
         <ReduxProvider>{children}</ReduxProvider>
       </body>
     </html>

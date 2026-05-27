@@ -42,7 +42,7 @@ export default function AppointmentsClient({ initialData, userName }: Props) {
   );
 
   return (
-    <div className="p-4 md:p-8 animate-fade-in mt-[60px] lg:mt-0">
+    <div className="p-4 md:p-8 animate-fade-in mt-[60px] lg:mt-0 overflow-x-hidden">
       <AppointmentModal userName={userName} />
       <DeleteConfirmModal />
 

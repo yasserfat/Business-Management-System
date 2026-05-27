@@ -29,7 +29,7 @@ export default async function DashboardPage() {
   const dateLabel = format(new Date(), "EEEE d MMMM yyyy", { locale: fr });
 
   return (
-    <div className="p-8 animate-fade-in">
+    <div className="p-8 animate-fade-in mt-[60px] lg:mt-0">
       {/* Header */}
       <div className="mb-8">
         <h1 className="font-display text-2xl font-bold text-ink">Tableau de bord</h1>

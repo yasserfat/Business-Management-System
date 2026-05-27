@@ -104,7 +104,7 @@ export default function Sidebar({ userName, userEmail }: SidebarProps) {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto mb-12">
+      <nav className="flex-1 w-full px-3 py-4 space-y-1 overflow-y-auto mb-12">
         {navItems.map(item => {
           const active = pathname === item.href || pathname.startsWith(item.href + '/');
           return (
