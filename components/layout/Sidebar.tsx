@@ -87,7 +87,7 @@ export default function Sidebar({ userName, userEmail }: SidebarProps) {
               </svg>
             </div>
             <div>
-              <p className="font-display font-bold text-sm text-ink leading-tight">BMS</p>
+              <p className="font-display font-bold text-sm text-ink leading-tight">مؤسسة عزالدين لتغليف </p>
               <p className="text-xs text-ink-subtle">Gestion commerciale</p>
             </div>
           </div>
@@ -164,7 +164,7 @@ export default function Sidebar({ userName, userEmail }: SidebarProps) {
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
             </svg>
           </div>
-          <span className="font-display font-bold text-sm text-ink">BMS</span>
+          <span className="font-display font-bold text-sm text-ink">مؤسسة عزالدين لتغليف الحافلات</span>
         </div>
         <button
           onClick={() => setMobileOpen(true)}

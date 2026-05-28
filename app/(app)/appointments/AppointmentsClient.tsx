@@ -17,12 +17,14 @@ export default function AppointmentsClient({ initialData, userName }: Props) {
 
   useEffect(() => { dispatch(setAppointments(initialData)); }, []);
 
-  const filtered = appointments.filter(a =>
+const filtered = appointments
+  .filter(a =>
     a.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     a.phone.includes(searchQuery) ||
     a.wilaya.toLowerCase().includes(searchQuery.toLowerCase()) ||
     a.service_type.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  )
+  .sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime());
 
   const EditBtn = ({ id }: { id: string }) => (
     <button onClick={() => dispatch(openAppointmentModal(id))} className="btn-ghost py-1.5 px-2.5 text-xs">
@@ -105,8 +107,8 @@ export default function AppointmentsClient({ initialData, userName }: Props) {
                 <p className="font-medium text-ink">{a.wilaya}</p>
               </div>
               <div className="bg-surface-50 rounded-xl px-3 py-2">
-                <p className="text-ink-subtle mb-0.5">Date & Heure</p>
-                <p className="font-medium text-ink">{format(new Date(a.datetime), 'dd/MM/yy HH:mm')}</p>
+                <p className="text-ink-subtle mb-0.5">Date </p>
+                <p className="font-medium text-ink">{format(new Date(a.datetime), 'dd/MM/yy')}</p>
               </div>
               <div className="bg-surface-50 rounded-xl px-3 py-2 col-span-2">
                 <p className="text-ink-subtle mb-0.5">Ajouté par</p>
@@ -133,7 +135,7 @@ export default function AppointmentsClient({ initialData, userName }: Props) {
                 <th className="table-head text-left px-5 py-3.5">Téléphone</th>
                 <th className="table-head text-left px-5 py-3.5">Wilaya</th>
                 <th className="table-head text-left px-5 py-3.5">Service</th>
-                <th className="table-head text-left px-5 py-3.5">Date & Heure</th>
+                <th className="table-head text-left px-5 py-3.5">Date </th>
                 <th className="table-head text-left px-5 py-3.5">Ajouté par</th>
                 <th className="table-head text-left px-5 py-3.5">Actions</th>
               </tr>
@@ -162,7 +164,7 @@ export default function AppointmentsClient({ initialData, userName }: Props) {
                       {a.service_type}
                     </span>
                   </td>
-                  <td className="px-5 py-4 text-sm text-ink-muted">{format(new Date(a.datetime), 'dd/MM/yyyy HH:mm')}</td>
+                  <td className="px-5 py-4 text-sm text-ink-muted">{format(new Date(a.datetime), 'dd/MM/yyyy')}</td>
                   <td className="px-5 py-4 text-sm text-ink-muted">{a.added_by || '—'}</td>
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-2">

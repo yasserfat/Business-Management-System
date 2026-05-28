@@ -7,6 +7,7 @@ export interface Appointment {
   datetime: string;
   added_by: string;
   created_at: string;
+  description?: string;
 }
 
 export interface Product {

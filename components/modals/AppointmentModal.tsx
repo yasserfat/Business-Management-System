@@ -18,9 +18,10 @@ export default function AppointmentModal({ userName }: Props) {
   const editItem = editId ? appointments.find(a => a.id === editId) : null;
 
   const [form, setForm] = useState({
-    name: '', phone: '', wilaya: WILAYAS[18], service_type: SERVICE_TYPES[0],
-    datetime: new Date().toISOString().slice(0, 16),
-  });
+  name: '', phone: '', wilaya: WILAYAS[18], service_type: SERVICE_TYPES[0],
+  datetime: new Date().toISOString().slice(0, 10),
+  description: '',   // ← add this
+});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -31,10 +32,11 @@ export default function AppointmentModal({ userName }: Props) {
         phone: editItem.phone,
         wilaya: editItem.wilaya,
         service_type: editItem.service_type,
-        datetime: editItem.datetime.slice(0, 16),
+        datetime: editItem.datetime.slice(0, 10),
+          description: editItem.description ?? '', 
       });
     } else {
-      setForm({ name: '', phone: '', wilaya: WILAYAS[18], service_type: SERVICE_TYPES[0], datetime: new Date().toISOString().slice(0, 16) });
+      setForm({ name: '', phone: '', wilaya: WILAYAS[18], service_type: SERVICE_TYPES[0], datetime: new Date().toISOString().slice(0, 10) });
     }
     setError('');
   }, [editId, open]);
@@ -94,15 +96,24 @@ export default function AppointmentModal({ userName }: Props) {
             </div>
             <div>
               <label className="label">Type de service</label>
-              <select className="input-field" value={form.service_type} onChange={e => setForm({...form, service_type: e.target.value})}>
-                {SERVICE_TYPES.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
+              <input className="input-field" value={form.service_type} onChange={e => setForm({...form, service_type: e.target.value})}/>
+              
             </div>
             <div>
-              <label className="label">Date & heure</label>
-              <input type="datetime-local" className="input-field" value={form.datetime} onChange={e => setForm({...form, datetime: e.target.value})} required />
+              <label className="label">Date </label>
+<input type="date" className="input-field" value={form.datetime} onChange={e => setForm({...form, datetime: e.target.value})} required />
             </div>
           </div>
+          <div className="col-span-2">
+  <label className="label">Description</label>
+  <textarea
+    className="input-field resize-none"
+    rows={3}
+    value={form.description}
+    onChange={e => setForm({...form, description: e.target.value})}
+    placeholder="Notes ou détails supplémentaires..."
+  />
+</div>
           <div className="p-3 bg-surface-50 rounded-xl flex items-center gap-2 text-xs text-ink-muted">
             <svg className="w-4 h-4 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
