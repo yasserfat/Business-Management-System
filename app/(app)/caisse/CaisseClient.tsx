@@ -315,7 +315,7 @@ export default function CaisseClient({ initialData, userName }: Props) {
 const dayGroups = useMemo(() => [...groupByDay(transactions)], [transactions]);
 console.log('dayGroups order:', dayGroups.map(([date]) => date));
   return (
-    <div className="p-4 md:p-8 animate-fade-in w-full max-w-full overflow-hidden">
+    <div className="p-4 md:p-8 animate-fade-in w-full max-w-full overflow-hidden mt-[60px] lg:mt-0">
       <TransactionModal userName={userName} />
       <DeleteConfirmModal />
 
