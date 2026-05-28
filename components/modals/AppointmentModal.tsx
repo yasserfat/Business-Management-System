@@ -33,11 +33,11 @@ export default function AppointmentModal({ userName }: Props) {
         wilaya: editItem.wilaya,
         service_type: editItem.service_type,
         datetime: editItem.datetime.slice(0, 10),
-          description: editItem.description ?? '', 
+        description: editItem.description ?? '', 
       });
-    } else {
-      setForm({ name: '', phone: '', wilaya: WILAYAS[18], service_type: SERVICE_TYPES[0], datetime: new Date().toISOString().slice(0, 10) });
-    }
+   } else {
+  setForm({ name: '', phone: '', wilaya: WILAYAS[18], service_type: SERVICE_TYPES[0], datetime: new Date().toISOString().slice(0, 10), description: '' });
+}
     setError('');
   }, [editId, open]);
 
