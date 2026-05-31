@@ -4,7 +4,7 @@ import AppointmentsClient from './AppointmentsClient';
 export default async function AppointmentsPage() {
   const supabase = createServerSupabaseClient();
   const [{ data: appointments }, { data: { session } }] = await Promise.all([
-    supabase.from('appointments').select('*').order('datetime', { ascending: false }),
+    supabase.from('appointments').select('*').order('date', { ascending: false }), // ← was 'datetime'
     supabase.auth.getSession(),
   ]);
 

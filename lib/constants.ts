@@ -16,7 +16,3 @@ export const WILAYAS = [
   "55 - Touggourt", "56 - Djanet", "57 - El M'Ghair", "58 - El Meniaa"
 ];
 
-export const SERVICE_TYPES = [
-  "Consultation", "Livraison", "Installation", "Maintenance",
-  "Réparation", "Formation", "Autre"
-];

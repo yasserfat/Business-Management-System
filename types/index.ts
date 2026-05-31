@@ -4,10 +4,9 @@ export interface Appointment {
   phone: string;
   wilaya: string;
   service_type: string;
-  datetime: string;
+  date: string;         // ✅ replaces datetime
+  description: string;  // ✅ new field
   added_by: string;
-  created_at: string;
-  
 }
 
 export interface Product {

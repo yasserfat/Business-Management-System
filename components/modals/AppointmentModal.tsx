@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { closeAppointmentModal } from '@/store/slices/uiSlice';
 import { addAppointment, updateAppointment } from '@/store/slices/appointmentsSlice';
-import { WILAYAS, SERVICE_TYPES } from '@/lib/constants';
+import { WILAYAS } from '@/lib/constants'; // removed SERVICE_TYPES import
 import { Appointment } from '@/types';
 
 interface Props { userName: string; }
@@ -18,8 +18,12 @@ export default function AppointmentModal({ userName }: Props) {
   const editItem = editId ? appointments.find(a => a.id === editId) : null;
 
   const [form, setForm] = useState({
-    name: '', phone: '', wilaya: WILAYAS[18], service_type: SERVICE_TYPES[0],
-    datetime: new Date().toISOString().slice(0, 16),
+    name: '',
+    phone: '',
+    wilaya: WILAYAS[18],
+    service_type: '',
+    date: new Date().toISOString().slice(0, 10),
+    description: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -31,10 +35,18 @@ export default function AppointmentModal({ userName }: Props) {
         phone: editItem.phone,
         wilaya: editItem.wilaya,
         service_type: editItem.service_type,
-        datetime: editItem.datetime.slice(0, 16),
+        date: editItem.date ?? editItem.datetime?.slice(0, 10) ?? new Date().toISOString().slice(0, 10),
+        description: editItem.description ?? '',
       });
     } else {
-      setForm({ name: '', phone: '', wilaya: WILAYAS[18], service_type: SERVICE_TYPES[0], datetime: new Date().toISOString().slice(0, 16) });
+      setForm({
+        name: '',
+        phone: '',
+        wilaya: WILAYAS[18],
+        service_type: '',
+        date: new Date().toISOString().slice(0, 10),
+        description: '',
+      });
     }
     setError('');
   }, [editId, open]);
@@ -94,13 +106,33 @@ export default function AppointmentModal({ userName }: Props) {
             </div>
             <div>
               <label className="label">Type de service</label>
-              <select className="input-field" value={form.service_type} onChange={e => setForm({...form, service_type: e.target.value})}>
-                {SERVICE_TYPES.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
+              <input
+                className="input-field"
+                value={form.service_type}
+                onChange={e => setForm({...form, service_type: e.target.value})}
+                placeholder="Ex: Consultation, Livraison..."
+                required
+              />
             </div>
             <div>
-              <label className="label">Date & heure</label>
-              <input type="datetime-local" className="input-field" value={form.datetime} onChange={e => setForm({...form, datetime: e.target.value})} required />
+              <label className="label">Date</label>
+              <input
+                type="date"
+                className="input-field"
+                value={form.date}
+                onChange={e => setForm({...form, date: e.target.value})}
+                required
+              />
+            </div>
+            <div className="col-span-2">
+              <label className="label">Description</label>
+              <textarea
+                className="input-field resize-none"
+                rows={3}
+                value={form.description}
+                onChange={e => setForm({...form, description: e.target.value})}
+                placeholder="Détails supplémentaires sur le rendez-vous..."
+              />
             </div>
           </div>
           <div className="p-3 bg-surface-50 rounded-xl flex items-center gap-2 text-xs text-ink-muted">

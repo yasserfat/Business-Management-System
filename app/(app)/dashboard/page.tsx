@@ -14,7 +14,7 @@ export default async function DashboardPage() {
     { data: recentAppointments },
     { data: recentTransactions },
   ] = await Promise.all([
-    supabase.from('appointments').select('id').gte('datetime', today + 'T00:00:00').lte('datetime', today + 'T23:59:59'),
+    supabase.from('appointments').select('id').eq('date', today),  // ← was datetime range
     supabase.from('products').select('id, quantity'),
     supabase.from('transactions').select('type, amount').eq('date', today),
     supabase.from('appointments').select('*').order('created_at', { ascending: false }).limit(5),
@@ -126,7 +126,7 @@ export default async function DashboardPage() {
                     <p className="text-xs text-ink-muted">{a.service_type} — {a.wilaya}</p>
                   </div>
                   <span className="text-xs text-ink-subtle flex-shrink-0">
-                    {format(new Date(a.datetime), 'dd/MM HH:mm')}
+                    {format(new Date(a.date), 'dd/MM/yyyy')}  {/* ← was a.datetime with HH:mm */}
                   </span>
                 </div>
               ))}

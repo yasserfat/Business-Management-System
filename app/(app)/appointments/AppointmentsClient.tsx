@@ -17,14 +17,14 @@ export default function AppointmentsClient({ initialData, userName }: Props) {
 
   useEffect(() => { dispatch(setAppointments(initialData)); }, []);
 
-const filtered = appointments
-  .filter(a =>
-    a.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    a.phone.includes(searchQuery) ||
-    a.wilaya.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    a.service_type.toLowerCase().includes(searchQuery.toLowerCase())
-  )
-  .sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime());
+  const filtered = appointments
+    .filter(a =>
+      a.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      a.phone.includes(searchQuery) ||
+      a.wilaya.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      a.service_type.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   const EditBtn = ({ id }: { id: string }) => (
     <button onClick={() => dispatch(openAppointmentModal(id))} className="btn-ghost py-1.5 px-2.5 text-xs">
@@ -107,9 +107,15 @@ const filtered = appointments
                 <p className="font-medium text-ink">{a.wilaya}</p>
               </div>
               <div className="bg-surface-50 rounded-xl px-3 py-2">
-                <p className="text-ink-subtle mb-0.5">Date </p>
-                <p className="font-medium text-ink">{format(new Date(a.datetime), 'dd/MM/yy')}</p>
+                <p className="text-ink-subtle mb-0.5">Date</p>
+                <p className="font-medium text-ink">{format(new Date(a.date), 'dd/MM/yyyy')}</p>
               </div>
+              {a.description && (
+                <div className="bg-surface-50 rounded-xl px-3 py-2 col-span-2">
+                  <p className="text-ink-subtle mb-0.5">Description</p>
+                  <p className="font-medium text-ink">{a.description}</p>
+                </div>
+              )}
               <div className="bg-surface-50 rounded-xl px-3 py-2 col-span-2">
                 <p className="text-ink-subtle mb-0.5">Ajouté par</p>
                 <p className="font-medium text-ink">{a.added_by || '—'}</p>
@@ -135,7 +141,7 @@ const filtered = appointments
                 <th className="table-head text-left px-5 py-3.5">Téléphone</th>
                 <th className="table-head text-left px-5 py-3.5">Wilaya</th>
                 <th className="table-head text-left px-5 py-3.5">Service</th>
-                <th className="table-head text-left px-5 py-3.5">Date </th>
+                <th className="table-head text-left px-5 py-3.5">Date</th>
                 <th className="table-head text-left px-5 py-3.5">Ajouté par</th>
                 <th className="table-head text-left px-5 py-3.5">Actions</th>
               </tr>
@@ -143,7 +149,7 @@ const filtered = appointments
             <tbody className="divide-y divide-surface-200">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-5 py-12 text-center text-ink-subtle text-sm">
+                  <td colSpan={8} className="px-5 py-12 text-center text-ink-subtle text-sm">
                     {searchQuery ? 'Aucun résultat trouvé' : 'Aucun rendez-vous pour le moment'}
                   </td>
                 </tr>
@@ -164,7 +170,8 @@ const filtered = appointments
                       {a.service_type}
                     </span>
                   </td>
-                  <td className="px-5 py-4 text-sm text-ink-muted">{format(new Date(a.datetime), 'dd/MM/yyyy')}</td>
+                  <td className="px-5 py-4 text-sm text-ink-muted">{format(new Date(a.date), 'dd/MM/yyyy')}</td>
+                 
                   <td className="px-5 py-4 text-sm text-ink-muted">{a.added_by || '—'}</td>
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-2">
