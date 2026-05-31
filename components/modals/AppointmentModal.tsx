@@ -35,7 +35,7 @@ export default function AppointmentModal({ userName }: Props) {
         phone: editItem.phone,
         wilaya: editItem.wilaya,
         service_type: editItem.service_type,
-        date: editItem.date ?? editItem.datetime?.slice(0, 10) ?? new Date().toISOString().slice(0, 10),
+        date: editItem.date ?? new Date().toISOString().slice(0, 10),
         description: editItem.description ?? '',
       });
     } else {
