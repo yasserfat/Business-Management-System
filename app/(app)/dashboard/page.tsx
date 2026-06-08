@@ -4,7 +4,7 @@ import { fr } from 'date-fns/locale';
 import Link from 'next/link';
 
 export default async function DashboardPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase =await  createServerSupabaseClient();
   const today = new Date().toISOString().split('T')[0];
 
   const [

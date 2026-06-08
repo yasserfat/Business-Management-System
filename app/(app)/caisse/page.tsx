@@ -2,7 +2,7 @@ import { createServerSupabaseClient } from '@/lib/supabase-server';
 import CaisseClient from './CaisseClient';
 
 export default async function CaissePage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const [{ data: transactions }, { data: { session } }] = await Promise.all([
     supabase.from('transactions').select('*').order('date', { ascending: false }).order('created_at', { ascending: false }),
     supabase.auth.getSession(),

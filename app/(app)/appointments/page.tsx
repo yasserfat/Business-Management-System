@@ -2,7 +2,7 @@ import { createServerSupabaseClient } from '@/lib/supabase-server';
 import AppointmentsClient from './AppointmentsClient';
 
 export default async function AppointmentsPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase =  await  createServerSupabaseClient();
 const [{ data: appointments }, { data: { user } }] = await Promise.all([
   supabase.from('appointments').select('*').order('date', { ascending: false }),
   supabase.auth.getUser(),
