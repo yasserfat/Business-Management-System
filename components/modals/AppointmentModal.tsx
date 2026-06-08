@@ -20,9 +20,9 @@ export default function AppointmentModal({ userName }: Props) {
   const [form, setForm] = useState({
     name: '',
     phone: '',
-    wilaya: WILAYAS[18],
+    wilaya: '',
     service_type: '',
-    date: new Date().toISOString().slice(0, 10),
+    date: '',
     description: '',
   });
   const [loading, setLoading] = useState(false);
@@ -42,9 +42,9 @@ export default function AppointmentModal({ userName }: Props) {
       setForm({
         name: '',
         phone: '',
-        wilaya: WILAYAS[18],
+        wilaya: '',
         service_type: '',
-        date: new Date().toISOString().slice(0, 10),
+        date: '',
         description: '',
       });
     }
@@ -100,7 +100,8 @@ export default function AppointmentModal({ userName }: Props) {
             </div>
             <div>
               <label className="label">Wilaya</label>
-              <select className="input-field" value={form.wilaya} onChange={e => setForm({...form, wilaya: e.target.value})}>
+              <select className="input-field" value={form.wilaya} onChange={e => setForm({...form, wilaya: e.target.value})} required>
+                <option value="" disabled>Sélectionner une wilaya</option>
                 {WILAYAS.map(w => <option key={w} value={w}>{w}</option>)}
               </select>
             </div>
