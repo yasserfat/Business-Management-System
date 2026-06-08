@@ -126,7 +126,7 @@ export default async function DashboardPage() {
                     <p className="text-xs text-ink-muted">{a.service_type} — {a.wilaya}</p>
                   </div>
                   <span className="text-xs text-ink-subtle flex-shrink-0">
-                {a.date ? format(new Date(a.date + 'T00:00:00'), 'dd/MM/yyyy') : '—'}  {/* ← was a.datetime with HH:mm */}
+                {a.date ? format(new Date(a.date + 'T00:00:00'), 'EEE dd/MM/yyyy', { locale: fr }) : '—'}
                   </span>
                 </div>
               ))}

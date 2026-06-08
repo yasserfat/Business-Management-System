@@ -4,11 +4,21 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setAppointments, setSearchQuery } from '@/store/slices/appointmentsSlice';
 import { openAppointmentModal, openDeleteConfirm } from '@/store/slices/uiSlice';
 import { Appointment } from '@/types';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import AppointmentModal from '@/components/modals/AppointmentModal';
 import DeleteConfirmModal from '@/components/modals/DeleteConfirmModal';
 
 interface Props { initialData: Appointment[]; userName: string; }
+
+function groupByDay(appointments: Appointment[]) {
+  const map: Record<string, Appointment[]> = {};
+  for (const a of appointments) {
+    if (!map[a.date]) map[a.date] = [];
+    map[a.date].push(a);
+  }
+  return Object.entries(map).sort(([a], [b]) => a.localeCompare(b));
+}
 
 export default function AppointmentsClient({ initialData, userName }: Props) {
   const dispatch = useAppDispatch();
@@ -17,14 +27,20 @@ export default function AppointmentsClient({ initialData, userName }: Props) {
 
   useEffect(() => { dispatch(setAppointments(initialData)); }, []);
 
-  const filtered = appointments
-    .filter(a =>
-      a.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      a.phone.includes(searchQuery) ||
-      a.wilaya.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      a.service_type.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const filtered = appointments.filter(a =>
+    a.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    a.phone.includes(searchQuery) ||
+    a.wilaya.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    a.service_type.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const grouped = groupByDay(filtered);
+  const today = new Date().toISOString().split('T')[0];
+
+  function getDayLabel(date: string) {
+    if (date === today) return "Aujourd'hui";
+    return format(parseISO(date), 'EEEE d MMMM yyyy', { locale: fr });
+  }
 
   const EditBtn = ({ id }: { id: string }) => (
     <button onClick={() => dispatch(openAppointmentModal(id))} className="btn-ghost py-1.5 px-2.5 text-xs">
@@ -76,114 +92,148 @@ export default function AppointmentsClient({ initialData, userName }: Props) {
         />
       </div>
 
-      {/* ── MOBILE: cards ── */}
-      <div className="md:hidden space-y-3">
-        {filtered.length === 0 ? (
+      {/* ── MOBILE: grouped cards ── */}
+      <div className="md:hidden space-y-6">
+        {grouped.length === 0 ? (
           <div className="card text-center py-10 text-ink-subtle text-sm">
             {searchQuery ? 'Aucun résultat trouvé' : 'Aucun rendez-vous pour le moment'}
           </div>
-        ) : filtered.map(a => (
-          <div key={a.id} className="card space-y-3">
-            {/* Top row: avatar + name + service badge */}
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-brand-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm font-bold text-brand-700">{a.name.slice(0, 2).toUpperCase()}</span>
-                </div>
-                <div>
-                  <p className="font-semibold text-ink text-sm">{a.name}</p>
-                  <p className="text-xs text-ink-muted">{a.phone}</p>
-                </div>
-              </div>
-              <span className="inline-flex items-center px-2.5 py-1 bg-brand-50 text-brand-700 text-xs font-medium rounded-full flex-shrink-0">
-                {a.service_type}
+        ) : grouped.map(([date, dayAppts]) => (
+          <div key={date}>
+            {/* Day header */}
+            <div className="flex items-center gap-3 mb-3 px-1">
+              <span className={`text-xs font-semibold capitalize ${date === today ? 'text-brand-600' : 'text-ink-muted'}`}>
+                {getDayLabel(date)}
+              </span>
+              <div className="flex-1 h-px bg-surface-200" />
+              <span className="text-xs text-ink-subtle bg-surface-100 px-2 py-0.5 rounded-full">
+                {dayAppts.length}
               </span>
             </div>
 
-            {/* Info row */}
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="bg-surface-50 rounded-xl px-3 py-2">
-                <p className="text-ink-subtle mb-0.5">Wilaya</p>
-                <p className="font-medium text-ink">{a.wilaya}</p>
-              </div>
-              <div className="bg-surface-50 rounded-xl px-3 py-2">
-                <p className="text-ink-subtle mb-0.5">Date</p>
-                <p className="font-medium text-ink">{format(new Date(a.date), 'dd/MM/yyyy')}</p>
-              </div>
-              {a.description && (
-                <div className="bg-surface-50 rounded-xl px-3 py-2 col-span-2">
-                  <p className="text-ink-subtle mb-0.5">Description</p>
-                  <p className="font-medium text-ink">{a.description}</p>
-                </div>
-              )}
-              <div className="bg-surface-50 rounded-xl px-3 py-2 col-span-2">
-                <p className="text-ink-subtle mb-0.5">Ajouté par</p>
-                <p className="font-medium text-ink">{a.added_by || '—'}</p>
-              </div>
-            </div>
+            {/* Cards */}
+            <div className="space-y-3">
+              {dayAppts.map(a => (
+                <div key={a.id} className="card space-y-3">
+                  {/* Top row: avatar + name + service badge */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-brand-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-sm font-bold text-brand-700">{a.name.slice(0, 2).toUpperCase()}</span>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-ink text-sm">{a.name}</p>
+                        <p className="text-xs text-ink-muted">{a.phone}</p>
+                      </div>
+                    </div>
+                    <span className="inline-flex items-center px-2.5 py-1 bg-brand-50 text-brand-700 text-xs font-medium rounded-full flex-shrink-0">
+                      {a.service_type}
+                    </span>
+                  </div>
 
-            {/* Actions */}
-            <div className="flex gap-2 pt-1">
-              <EditBtn id={a.id} />
-              <DeleteBtn id={a.id} />
+                  {/* Info row */}
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="bg-surface-50 rounded-xl px-3 py-2">
+                      <p className="text-ink-subtle mb-0.5">Wilaya</p>
+                      <p className="font-medium text-ink">{a.wilaya}</p>
+                    </div>
+                    <div className="bg-surface-50 rounded-xl px-3 py-2">
+                      <p className="text-ink-subtle mb-0.5">Date</p>
+                      <p className="font-medium text-ink capitalize">{format(parseISO(a.date), 'EEE dd/MM/yyyy', { locale: fr })}</p>
+                    </div>
+                    {a.description && (
+                      <div className="bg-surface-50 rounded-xl px-3 py-2 col-span-2">
+                        <p className="text-ink-subtle mb-0.5">Description</p>
+                        <p className="font-medium text-ink">{a.description}</p>
+                      </div>
+                    )}
+                    <div className="bg-surface-50 rounded-xl px-3 py-2 col-span-2">
+                      <p className="text-ink-subtle mb-0.5">Ajouté par</p>
+                      <p className="font-medium text-ink">{a.added_by || '—'}</p>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-2 pt-1">
+                    <EditBtn id={a.id} />
+                    <DeleteBtn id={a.id} />
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         ))}
       </div>
 
-      {/* ── DESKTOP: table ── */}
-      <div className="hidden md:block card overflow-hidden p-0">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-surface-200 bg-surface-50">
-                <th className="table-head text-left px-5 py-3.5">Client</th>
-                <th className="table-head text-left px-5 py-3.5">Téléphone</th>
-                <th className="table-head text-left px-5 py-3.5">Wilaya</th>
-                <th className="table-head text-left px-5 py-3.5">Service</th>
-                <th className="table-head text-left px-5 py-3.5">Date</th>
-                <th className="table-head text-left px-5 py-3.5">Ajouté par</th>
-                <th className="table-head text-left px-5 py-3.5">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-surface-200">
-              {filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="px-5 py-12 text-center text-ink-subtle text-sm">
-                    {searchQuery ? 'Aucun résultat trouvé' : 'Aucun rendez-vous pour le moment'}
-                  </td>
-                </tr>
-              ) : filtered.map(a => (
-                <tr key={a.id} className="hover:bg-surface-50 transition-colors">
-                  <td className="px-5 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-brand-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-xs font-bold text-brand-700">{a.name.slice(0, 2).toUpperCase()}</span>
-                      </div>
-                      <span className="text-sm font-medium text-ink">{a.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-5 py-4 text-sm text-ink-muted">{a.phone}</td>
-                  <td className="px-5 py-4 text-sm text-ink-muted">{a.wilaya}</td>
-                  <td className="px-5 py-4">
-                    <span className="inline-flex items-center px-2.5 py-1 bg-brand-50 text-brand-700 text-xs font-medium rounded-full">
-                      {a.service_type}
-                    </span>
-                  </td>
-                  <td className="px-5 py-4 text-sm text-ink-muted">{format(new Date(a.date), 'dd/MM/yyyy')}</td>
-                 
-                  <td className="px-5 py-4 text-sm text-ink-muted">{a.added_by || '—'}</td>
-                  <td className="px-5 py-4">
-                    <div className="flex items-center gap-2">
-                      <EditBtn id={a.id} />
-                      <DeleteBtn id={a.id} />
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {/* ── DESKTOP: grouped table ── */}
+      <div className="hidden md:block space-y-5">
+        {grouped.length === 0 ? (
+          <div className="card text-center py-12 text-ink-subtle text-sm">
+            {searchQuery ? 'Aucun résultat trouvé' : 'Aucun rendez-vous pour le moment'}
+          </div>
+        ) : grouped.map(([date, dayAppts]) => (
+          <div key={date} className="card overflow-hidden p-0">
+            {/* Day header */}
+            <div className={`flex items-center gap-3 px-5 py-3 border-b border-surface-200 ${date === today ? 'bg-brand-50' : 'bg-surface-50'}`}>
+              <svg className={`w-4 h-4 flex-shrink-0 ${date === today ? 'text-brand-500' : 'text-ink-muted'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span className={`text-sm font-semibold capitalize ${date === today ? 'text-brand-700' : 'text-ink'}`}>
+                {getDayLabel(date)}
+              </span>
+              <span className="text-xs text-ink-subtle bg-surface-100 px-2 py-0.5 rounded-full ml-1">
+                {dayAppts.length}
+              </span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-surface-200">
+                    <th className="table-head text-left px-5 py-3">Client</th>
+                    <th className="table-head text-left px-5 py-3">Téléphone</th>
+                    <th className="table-head text-left px-5 py-3">Wilaya</th>
+                    <th className="table-head text-left px-5 py-3">Service</th>
+                    <th className="table-head text-left px-5 py-3">Date</th>
+                    <th className="table-head text-left px-5 py-3">Ajouté par</th>
+                    <th className="table-head text-left px-5 py-3">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-surface-200">
+                  {dayAppts.map(a => (
+                    <tr key={a.id} className="hover:bg-surface-50 transition-colors">
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-brand-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span className="text-xs font-bold text-brand-700">{a.name.slice(0, 2).toUpperCase()}</span>
+                          </div>
+                          <span className="text-sm font-medium text-ink">{a.name}</span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-4 text-sm text-ink-muted">{a.phone}</td>
+                      <td className="px-5 py-4 text-sm text-ink-muted">{a.wilaya}</td>
+                      <td className="px-5 py-4">
+                        <span className="inline-flex items-center px-2.5 py-1 bg-brand-50 text-brand-700 text-xs font-medium rounded-full">
+                          {a.service_type}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 text-sm text-ink-muted capitalize">
+                        {format(parseISO(a.date), 'EEE dd/MM/yyyy', { locale: fr })}
+                      </td>
+                      <td className="px-5 py-4 text-sm text-ink-muted">{a.added_by || '—'}</td>
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-2">
+                          <EditBtn id={a.id} />
+                          <DeleteBtn id={a.id} />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
