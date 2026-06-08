@@ -39,7 +39,10 @@ export default function LoginPage() {
             </svg>
           </div>
           <h1 className="font-display text-2xl font-bold text-ink">Système de Gestion</h1>
-          <p className="text-ink-muted text-sm mt-1">Connectez-vous à votre espace</p>
+          <p className="mt-2 text-base font-bold text-brand-600 bg-brand-50 border border-brand-200 rounded-xl px-4 py-2 inline-block" dir="rtl">
+            مؤسسة عزالدين لتغليف
+          </p>
+          <p className="text-ink-muted text-sm mt-2">Connectez-vous à votre espace</p>
         </div>
 
         {/* Card */}
