@@ -123,7 +123,7 @@ export default function AppointmentsClient({ initialData, userName }: Props) {
                       </div>
                       <div>
                         <p className="font-semibold text-ink text-sm">{a.name}</p>
-                        <p className="text-xs text-ink-muted">{a.phone}</p>
+                        <a href={`tel:${a.phone}`} className="text-xs text-brand-600 hover:underline">{a.phone}</a>
                       </div>
                     </div>
                     <span className="inline-flex items-center px-2.5 py-1 bg-brand-50 text-brand-700 text-xs font-medium rounded-full flex-shrink-0">
@@ -210,7 +210,9 @@ export default function AppointmentsClient({ initialData, userName }: Props) {
                           <span className="text-sm font-medium text-ink">{a.name}</span>
                         </div>
                       </td>
-                      <td className="px-5 py-4 text-sm text-ink-muted">{a.phone}</td>
+                      <td className="px-5 py-4 text-sm">
+                        <a href={`tel:${a.phone}`} className="text-brand-600 hover:underline">{a.phone}</a>
+                      </td>
                       <td className="px-5 py-4 text-sm text-ink-muted">{a.wilaya}</td>
                       <td className="px-5 py-4">
                         <span className="inline-flex items-center px-2.5 py-1 bg-brand-50 text-brand-700 text-xs font-medium rounded-full">
