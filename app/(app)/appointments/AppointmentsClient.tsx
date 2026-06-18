@@ -4,20 +4,29 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setAppointments, setSearchQuery } from '@/store/slices/appointmentsSlice';
 import { openAppointmentModal, openDeleteConfirm } from '@/store/slices/uiSlice';
 import { Appointment } from '@/types';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, eachDayOfInterval } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import AppointmentModal from '@/components/modals/AppointmentModal';
 import DeleteConfirmModal from '@/components/modals/DeleteConfirmModal';
 
 interface Props { initialData: Appointment[]; userName: string; }
 
-function groupByDay(appointments: Appointment[]) {
+function groupByDay(appointments: Appointment[], fillGaps: boolean) {
   const map: Record<string, Appointment[]> = {};
   for (const a of appointments) {
     if (!map[a.date]) map[a.date] = [];
     map[a.date].push(a);
   }
-  return Object.entries(map).sort(([a], [b]) => a.localeCompare(b));
+  const dates = Object.keys(map).sort((a, b) => a.localeCompare(b));
+  if (dates.length === 0) return [];
+  if (!fillGaps) return dates.map(date => [date, map[date]] as [string, Appointment[]]);
+
+  const allDays = eachDayOfInterval({
+    start: parseISO(dates[0]),
+    end: parseISO(dates[dates.length - 1]),
+  }).map(d => format(d, 'yyyy-MM-dd'));
+
+  return allDays.map(date => [date, map[date] || []] as [string, Appointment[]]);
 }
 
 export default function AppointmentsClient({ initialData, userName }: Props) {
@@ -34,7 +43,7 @@ export default function AppointmentsClient({ initialData, userName }: Props) {
     a.service_type.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const grouped = groupByDay(filtered);
+  const grouped = groupByDay(filtered, !searchQuery);
   const today = new Date().toISOString().split('T')[0];
 
   function getDayLabel(date: string) {
@@ -102,16 +111,30 @@ export default function AppointmentsClient({ initialData, userName }: Props) {
           <div key={date}>
             {/* Day header */}
             <div className="flex items-center gap-3 mb-3 px-1">
-              <span className={`text-xs font-semibold capitalize ${date === today ? 'text-brand-600' : 'text-ink-muted'}`}>
+              <span className={`text-xs font-semibold capitalize ${date === today ? 'text-brand-600' : dayAppts.length === 0 ? 'text-ink-subtle' : 'text-ink-muted'}`}>
                 {getDayLabel(date)}
               </span>
               <div className="flex-1 h-px bg-surface-200" />
-              <span className="text-xs text-ink-subtle bg-surface-100 px-2 py-0.5 rounded-full">
-                {dayAppts.length}
-              </span>
+              {dayAppts.length === 0 ? (
+                <span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">Libre</span>
+              ) : (
+                <span className="text-xs text-ink-subtle bg-surface-100 px-2 py-0.5 rounded-full">
+                  {dayAppts.length}
+                </span>
+              )}
             </div>
 
-            {/* Cards */}
+            {dayAppts.length === 0 ? (
+              <div className="card flex flex-col items-center gap-2 py-3 text-ink-subtle text-xs border border-dashed border-surface-200">
+                <span>Aucun rendez-vous ce jour</span>
+                <button onClick={() => dispatch(openAppointmentModal({ editId: null, date }))} className="btn-ghost py-1 px-2.5 text-xs">
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                  Ajouter un rendez-vous
+                </button>
+              </div>
+            ) : (
             <div className="space-y-3">
               {dayAppts.map(a => (
                 <div key={a.id} className="card space-y-3">
@@ -161,6 +184,7 @@ export default function AppointmentsClient({ initialData, userName }: Props) {
                 </div>
               ))}
             </div>
+            )}
           </div>
         ))}
       </div>
@@ -178,14 +202,29 @@ export default function AppointmentsClient({ initialData, userName }: Props) {
               <svg className={`w-4 h-4 flex-shrink-0 ${date === today ? 'text-brand-500' : 'text-ink-muted'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              <span className={`text-sm font-semibold capitalize ${date === today ? 'text-brand-700' : 'text-ink'}`}>
+              <span className={`text-sm font-semibold capitalize ${date === today ? 'text-brand-700' : dayAppts.length === 0 ? 'text-ink-subtle' : 'text-ink'}`}>
                 {getDayLabel(date)}
               </span>
-              <span className="text-xs text-ink-subtle bg-surface-100 px-2 py-0.5 rounded-full ml-1">
-                {dayAppts.length}
-              </span>
+              {dayAppts.length === 0 ? (
+                <span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full ml-1">Libre</span>
+              ) : (
+                <span className="text-xs text-ink-subtle bg-surface-100 px-2 py-0.5 rounded-full ml-1">
+                  {dayAppts.length}
+                </span>
+              )}
             </div>
 
+            {dayAppts.length === 0 ? (
+              <div className="flex flex-col items-center gap-2 py-4 text-ink-subtle text-sm">
+                <span>Aucun rendez-vous ce jour</span>
+                <button onClick={() => dispatch(openAppointmentModal({ editId: null, date }))} className="btn-ghost py-1.5 px-2.5 text-xs">
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                  Ajouter un rendez-vous
+                </button>
+              </div>
+            ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -234,6 +273,7 @@ export default function AppointmentsClient({ initialData, userName }: Props) {
                 </tbody>
               </table>
             </div>
+            )}
           </div>
         ))}
       </div>

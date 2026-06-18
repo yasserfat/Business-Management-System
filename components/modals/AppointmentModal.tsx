@@ -11,7 +11,7 @@ interface Props { userName: string; }
 
 export default function AppointmentModal({ userName }: Props) {
   const dispatch = useAppDispatch();
-  const { open, editId } = useAppSelector(s => s.ui.appointmentModal);
+  const { open, editId, defaultDate } = useAppSelector(s => s.ui.appointmentModal);
   const appointments = useAppSelector(s => s.appointments.items);
   const supabase = createClient();
 
@@ -44,12 +44,12 @@ export default function AppointmentModal({ userName }: Props) {
         phone: '',
         wilaya: '',
         service_type: '',
-        date: '',
+        date: defaultDate ?? '',
         description: '',
       });
     }
     setError('');
-  }, [editId, open]);
+  }, [editId, open, defaultDate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
