@@ -14,6 +14,7 @@ interface Props { initialData: Appointment[]; userName: string; }
 function groupByDay(appointments: Appointment[], fillGaps: boolean) {
   const map: Record<string, Appointment[]> = {};
   for (const a of appointments) {
+    if (!a.date) continue;
     if (!map[a.date]) map[a.date] = [];
     map[a.date].push(a);
   }
@@ -43,7 +44,8 @@ export default function AppointmentsClient({ initialData, userName }: Props) {
     a.service_type.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const grouped = groupByDay(filtered, !searchQuery);
+  const urgentAppts = filtered.filter(a => a.urgent);
+  const grouped = groupByDay(filtered.filter(a => !a.urgent), !searchQuery);
   const today = new Date().toISOString().split('T')[0];
 
   function getDayLabel(date: string) {
@@ -100,6 +102,65 @@ export default function AppointmentsClient({ initialData, userName }: Props) {
           onChange={e => dispatch(setSearchQuery(e.target.value))}
         />
       </div>
+
+      {/* ── URGENT appointments (no date, always on top) ── */}
+      {urgentAppts.length > 0 && (
+        <div className="mb-6 space-y-3">
+          <div className="flex items-center gap-2 px-1">
+            <svg className="w-4 h-4 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <span className="text-sm font-semibold text-orange-700">Urgent</span>
+            <span className="text-xs text-orange-600 bg-orange-100 px-2 py-0.5 rounded-full">{urgentAppts.length}</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {urgentAppts.map(a => (
+              <div key={a.id} className="card space-y-3 border-2 border-orange-300 bg-orange-50">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-orange-200 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm font-bold text-orange-800">{a.name.slice(0, 2).toUpperCase()}</span>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-ink text-sm">{a.name}</p>
+                      <a href={`tel:${a.phone}`} className="text-xs text-brand-600 hover:underline">{a.phone}</a>
+                    </div>
+                  </div>
+                  <span className="inline-flex items-center px-2.5 py-1 bg-orange-200 text-orange-800 text-xs font-semibold rounded-full flex-shrink-0">
+                    Urgent
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="bg-white/60 rounded-xl px-3 py-2">
+                    <p className="text-ink-subtle mb-0.5">Wilaya</p>
+                    <p className="font-medium text-ink">{a.wilaya}</p>
+                  </div>
+                  <div className="bg-white/60 rounded-xl px-3 py-2">
+                    <p className="text-ink-subtle mb-0.5">Service</p>
+                    <p className="font-medium text-ink">{a.service_type}</p>
+                  </div>
+                  {a.description && (
+                    <div className="bg-white/60 rounded-xl px-3 py-2 col-span-2">
+                      <p className="text-ink-subtle mb-0.5">Description</p>
+                      <p className="font-medium text-ink">{a.description}</p>
+                    </div>
+                  )}
+                  <div className="bg-white/60 rounded-xl px-3 py-2 col-span-2">
+                    <p className="text-ink-subtle mb-0.5">Ajouté par</p>
+                    <p className="font-medium text-ink">{a.added_by || '—'}</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-1">
+                  <EditBtn id={a.id} />
+                  <DeleteBtn id={a.id} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── MOBILE: grouped cards ── */}
       <div className="md:hidden space-y-6">
@@ -162,7 +223,7 @@ export default function AppointmentsClient({ initialData, userName }: Props) {
                     </div>
                     <div className="bg-surface-50 rounded-xl px-3 py-2">
                       <p className="text-ink-subtle mb-0.5">Date</p>
-                      <p className="font-medium text-ink capitalize">{format(parseISO(a.date), 'EEE dd/MM/yyyy', { locale: fr })}</p>
+                      <p className="font-medium text-ink capitalize">{format(parseISO(a.date!), 'EEE dd/MM/yyyy', { locale: fr })}</p>
                     </div>
                     {a.description && (
                       <div className="bg-surface-50 rounded-xl px-3 py-2 col-span-2">
@@ -259,7 +320,7 @@ export default function AppointmentsClient({ initialData, userName }: Props) {
                         </span>
                       </td>
                       <td className="px-5 py-4 text-sm text-ink-muted capitalize">
-                        {format(parseISO(a.date), 'EEE dd/MM/yyyy', { locale: fr })}
+                        {format(parseISO(a.date!), 'EEE dd/MM/yyyy', { locale: fr })}
                       </td>
                       <td className="px-5 py-4 text-sm text-ink-muted">{a.added_by || '—'}</td>
                       <td className="px-5 py-4">

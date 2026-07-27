@@ -24,6 +24,7 @@ export default function AppointmentModal({ userName }: Props) {
     service_type: '',
     date: '',
     description: '',
+    urgent: false,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -37,6 +38,7 @@ export default function AppointmentModal({ userName }: Props) {
         service_type: editItem.service_type,
         date: editItem.date ?? new Date().toISOString().slice(0, 10),
         description: editItem.description ?? '',
+        urgent: editItem.urgent ?? false,
       });
     } else {
       setForm({
@@ -46,6 +48,7 @@ export default function AppointmentModal({ userName }: Props) {
         service_type: '',
         date: defaultDate ?? '',
         description: '',
+        urgent: false,
       });
     }
     setError('');
@@ -56,7 +59,7 @@ export default function AppointmentModal({ userName }: Props) {
     setLoading(true);
     setError('');
 
-    const payload = { ...form, added_by: userName };
+    const payload = { ...form, date: form.urgent ? null : form.date, added_by: userName };
 
     if (editId) {
       const { data, error } = await supabase
@@ -119,11 +122,24 @@ export default function AppointmentModal({ userName }: Props) {
               <label className="label">Date</label>
               <input
                 type="date"
-                className="input-field"
-                value={form.date}
+                className="input-field disabled:opacity-50 disabled:cursor-not-allowed"
+                value={form.urgent ? '' : form.date}
                 onChange={e => setForm({...form, date: e.target.value})}
-                required
+                disabled={form.urgent}
+                required={!form.urgent}
               />
+            </div>
+            <div className="col-span-2">
+              <label className="flex items-center gap-2 p-3 bg-red-50 border border-red-100 rounded-xl cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 accent-red-600"
+                  checked={form.urgent}
+                  onChange={e => setForm({...form, urgent: e.target.checked})}
+                />
+                <span className="text-sm font-medium text-red-700">Rendez-vous urgent</span>
+                <span className="text-xs text-red-500">(sans date, affiché en priorité)</span>
+              </label>
             </div>
             <div className="col-span-2">
               <label className="label">Description</label>

@@ -11,10 +11,17 @@ CREATE TABLE IF NOT EXISTS appointments (
   phone TEXT NOT NULL,
   wilaya TEXT NOT NULL,
   service_type TEXT NOT NULL,
-  datetime TIMESTAMPTZ NOT NULL,
+  date DATE,
+  description TEXT NOT NULL DEFAULT '',
+  urgent BOOLEAN NOT NULL DEFAULT false,
   added_by TEXT NOT NULL DEFAULT '',
   created_at TIMESTAMPTZ DEFAULT now()
 );
+
+-- Run this against an EXISTING database (table already created) to add
+-- urgent-appointment support without losing data:
+-- ALTER TABLE appointments ADD COLUMN IF NOT EXISTS urgent BOOLEAN NOT NULL DEFAULT false;
+-- ALTER TABLE appointments ALTER COLUMN date DROP NOT NULL;
 
 -- 2. PRODUCTS (STOCK) TABLE
 CREATE TABLE IF NOT EXISTS products (
@@ -65,7 +72,7 @@ CREATE POLICY "Authenticated users can manage transactions"
 -- ============================================================
 -- INDEXES for performance
 -- ============================================================
-CREATE INDEX IF NOT EXISTS idx_appointments_datetime ON appointments(datetime);
+CREATE INDEX IF NOT EXISTS idx_appointments_date ON appointments(date);
 CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date);
 CREATE INDEX IF NOT EXISTS idx_transactions_type ON transactions(type);
 
