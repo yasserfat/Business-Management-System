@@ -5,6 +5,7 @@ interface UIState {
   productModal: { open: boolean; editId: string | null };
   transactionModal: { open: boolean };
   deleteConfirm: { open: boolean; type: string; id: string | null };
+  imageLightbox: { open: boolean; images: string[]; index: number };
 }
 
 const initialState: UIState = {
@@ -12,6 +13,7 @@ const initialState: UIState = {
   productModal: { open: false, editId: null },
   transactionModal: { open: false },
   deleteConfirm: { open: false, type: '', id: null },
+  imageLightbox: { open: false, images: [], index: 0 },
 };
 
 const uiSlice = createSlice({
@@ -47,6 +49,15 @@ const uiSlice = createSlice({
     closeDeleteConfirm(state) {
       state.deleteConfirm = { open: false, type: '', id: null };
     },
+    openImageLightbox(state, action: PayloadAction<{ images: string[]; index: number }>) {
+      state.imageLightbox = { open: true, ...action.payload };
+    },
+    closeImageLightbox(state) {
+      state.imageLightbox = { open: false, images: [], index: 0 };
+    },
+    setLightboxIndex(state, action: PayloadAction<number>) {
+      state.imageLightbox.index = action.payload;
+    },
   },
 });
 
@@ -55,6 +66,7 @@ export const {
   openProductModal, closeProductModal,
   openTransactionModal, closeTransactionModal,
   openDeleteConfirm, closeDeleteConfirm,
+  openImageLightbox, closeImageLightbox, setLightboxIndex,
 } = uiSlice.actions;
 
 export default uiSlice.reducer;

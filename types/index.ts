@@ -1,3 +1,10 @@
+export interface AppointmentImage {
+  id: string;
+  appointment_id: string;
+  storage_path: string;
+  created_at: string;
+}
+
 export interface Appointment {
   id: string;
   name: string;
@@ -8,6 +15,11 @@ export interface Appointment {
   description: string;  // ✅ new field
   added_by: string;
   urgent: boolean;
+  created_at?: string;
+  deleted_at?: string | null;
+  deleted_by_name?: string | null;
+  deleted_by_email?: string | null;
+  appointment_images?: AppointmentImage[];
 }
 
 export interface Product {

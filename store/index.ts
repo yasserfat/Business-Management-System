@@ -3,6 +3,7 @@ import uiReducer from './slices/uiSlice';
 import appointmentsReducer from './slices/appointmentsSlice';
 import productsReducer from './slices/productsSlice';
 import transactionsReducer from './slices/transactionsSlice';
+import recycleBinReducer from './slices/recycleBinSlice';
 
 export const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ export const store = configureStore({
     appointments: appointmentsReducer,
     products: productsReducer,
     transactions: transactionsReducer,
+    recycleBin: recycleBinReducer,
   },
 });
 

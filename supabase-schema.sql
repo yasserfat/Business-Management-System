@@ -15,13 +15,24 @@ CREATE TABLE IF NOT EXISTS appointments (
   description TEXT NOT NULL DEFAULT '',
   urgent BOOLEAN NOT NULL DEFAULT false,
   added_by TEXT NOT NULL DEFAULT '',
-  created_at TIMESTAMPTZ DEFAULT now()
+  created_at TIMESTAMPTZ DEFAULT now(),
+  deleted_at TIMESTAMPTZ,
+  deleted_by_name TEXT,
+  deleted_by_email TEXT
 );
 
 -- Run this against an EXISTING database (table already created) to add
 -- urgent-appointment support without losing data:
 -- ALTER TABLE appointments ADD COLUMN IF NOT EXISTS urgent BOOLEAN NOT NULL DEFAULT false;
 -- ALTER TABLE appointments ALTER COLUMN date DROP NOT NULL;
+
+-- 1b. APPOINTMENT IMAGES TABLE
+CREATE TABLE IF NOT EXISTS appointment_images (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  appointment_id UUID NOT NULL REFERENCES appointments(id) ON DELETE CASCADE,
+  storage_path TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
 
 -- 2. PRODUCTS (STOCK) TABLE
 CREATE TABLE IF NOT EXISTS products (
@@ -69,12 +80,62 @@ CREATE POLICY "Authenticated users can manage transactions"
   TO authenticated
   USING (true) WITH CHECK (true);
 
+ALTER TABLE appointment_images ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Authenticated users can manage appointment images"
+  ON appointment_images FOR ALL
+  TO authenticated
+  USING (true) WITH CHECK (true);
+
 -- ============================================================
 -- INDEXES for performance
 -- ============================================================
 CREATE INDEX IF NOT EXISTS idx_appointments_date ON appointments(date);
+CREATE INDEX IF NOT EXISTS idx_appointments_deleted_at ON appointments(deleted_at);
+CREATE INDEX IF NOT EXISTS idx_appointment_images_appointment_id ON appointment_images(appointment_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date);
 CREATE INDEX IF NOT EXISTS idx_transactions_type ON transactions(type);
+
+-- ============================================================
+-- MIGRATION: run this against an EXISTING database to add
+-- appointment images + soft-delete/recycle-bin support.
+-- ============================================================
+-- ALTER TABLE appointments ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+-- ALTER TABLE appointments ADD COLUMN IF NOT EXISTS deleted_by_name TEXT;
+-- ALTER TABLE appointments ADD COLUMN IF NOT EXISTS deleted_by_email TEXT;
+-- CREATE INDEX IF NOT EXISTS idx_appointments_deleted_at ON appointments(deleted_at);
+--
+-- CREATE TABLE IF NOT EXISTS appointment_images (
+--   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+--   appointment_id UUID NOT NULL REFERENCES appointments(id) ON DELETE CASCADE,
+--   storage_path TEXT NOT NULL,
+--   created_at TIMESTAMPTZ DEFAULT now()
+-- );
+-- ALTER TABLE appointment_images ENABLE ROW LEVEL SECURITY;
+-- DROP POLICY IF EXISTS "Authenticated users can manage appointment images" ON appointment_images;
+-- CREATE POLICY "Authenticated users can manage appointment images"
+--   ON appointment_images FOR ALL TO authenticated USING (true) WITH CHECK (true);
+-- CREATE INDEX IF NOT EXISTS idx_appointment_images_appointment_id ON appointment_images(appointment_id);
+
+-- ============================================================
+-- STORAGE: appointment-images bucket (public) + RLS (run once)
+-- ============================================================
+-- insert into storage.buckets (id, name, public)
+--   values ('appointment-images', 'appointment-images', true)
+--   on conflict (id) do nothing;
+--
+-- drop policy if exists "Public read access to appointment images" on storage.objects;
+-- create policy "Public read access to appointment images" on storage.objects
+--   for select using (bucket_id = 'appointment-images');
+-- drop policy if exists "Authenticated users can upload appointment images" on storage.objects;
+-- create policy "Authenticated users can upload appointment images" on storage.objects
+--   for insert to authenticated with check (bucket_id = 'appointment-images');
+-- drop policy if exists "Authenticated users can update appointment images" on storage.objects;
+-- create policy "Authenticated users can update appointment images" on storage.objects
+--   for update to authenticated using (bucket_id = 'appointment-images');
+-- drop policy if exists "Authenticated users can delete appointment images" on storage.objects;
+-- create policy "Authenticated users can delete appointment images" on storage.objects
+--   for delete to authenticated using (bucket_id = 'appointment-images');
 
 -- ============================================================
 -- HOW TO CREATE YOUR 4 USERS:

@@ -2,12 +2,14 @@
 import { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setAppointments, setSearchQuery } from '@/store/slices/appointmentsSlice';
-import { openAppointmentModal, openDeleteConfirm } from '@/store/slices/uiSlice';
+import { openAppointmentModal, openDeleteConfirm, openImageLightbox } from '@/store/slices/uiSlice';
 import { Appointment } from '@/types';
 import { format, parseISO, eachDayOfInterval, getDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import AppointmentModal from '@/components/modals/AppointmentModal';
 import DeleteConfirmModal from '@/components/modals/DeleteConfirmModal';
+import ImageLightbox from '@/components/appointments/ImageLightbox';
+import { getAppointmentImageUrl } from '@/lib/storage';
 
 interface Props { initialData: Appointment[]; userName: string; }
 
@@ -61,6 +63,28 @@ export default function AppointmentsClient({ initialData, userName }: Props) {
       Modifier
     </button>
   );
+  const ThumbnailStrip = ({ a }: { a: Appointment }) => {
+    if (!a.appointment_images || a.appointment_images.length === 0) return null;
+    const urls = a.appointment_images.map(img => getAppointmentImageUrl(img.storage_path));
+    return (
+      <div className="bg-surface-50 rounded-xl px-3 py-2 col-span-2">
+        <p className="text-ink-subtle mb-1">Photos</p>
+        <div className="flex gap-1.5 flex-wrap">
+          {urls.map((url, i) => (
+            <button
+              key={a.appointment_images![i].id}
+              type="button"
+              onClick={() => dispatch(openImageLightbox({ images: urls, index: i }))}
+              className="block"
+            >
+              <img src={url} alt="" className="w-12 h-12 object-cover rounded-lg border border-surface-200" />
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   const DeleteBtn = ({ id }: { id: string }) => (
     <button onClick={() => dispatch(openDeleteConfirm({ type: 'appointment', id }))} className="btn-ghost py-1.5 px-2.5 text-xs !text-red-500 hover:!bg-red-50">
       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -74,6 +98,7 @@ export default function AppointmentsClient({ initialData, userName }: Props) {
     <div className="p-4 md:p-8 animate-fade-in mt-[60px] lg:mt-0 overflow-x-hidden">
       <AppointmentModal userName={userName} />
       <DeleteConfirmModal />
+      <ImageLightbox />
 
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
@@ -150,6 +175,7 @@ export default function AppointmentsClient({ initialData, userName }: Props) {
                     <p className="text-ink-subtle mb-0.5">Ajouté par</p>
                     <p className="font-medium text-ink">{a.added_by || '—'}</p>
                   </div>
+                  <ThumbnailStrip a={a} />
                 </div>
 
                 <div className="flex gap-2 pt-1">
@@ -235,6 +261,7 @@ export default function AppointmentsClient({ initialData, userName }: Props) {
                       <p className="text-ink-subtle mb-0.5">Ajouté par</p>
                       <p className="font-medium text-ink">{a.added_by || '—'}</p>
                     </div>
+                    <ThumbnailStrip a={a} />
                   </div>
 
                   {/* Actions */}
@@ -296,6 +323,7 @@ export default function AppointmentsClient({ initialData, userName }: Props) {
                     <th className="table-head text-left px-5 py-3">Service</th>
                     <th className="table-head text-left px-5 py-3">Date</th>
                     <th className="table-head text-left px-5 py-3">Ajouté par</th>
+                    <th className="table-head text-left px-5 py-3">Photos</th>
                     <th className="table-head text-left px-5 py-3">Actions</th>
                   </tr>
                 </thead>
@@ -323,6 +351,32 @@ export default function AppointmentsClient({ initialData, userName }: Props) {
                         {format(parseISO(a.date!), 'EEE dd/MM/yyyy', { locale: fr })}
                       </td>
                       <td className="px-5 py-4 text-sm text-ink-muted">{a.added_by || '—'}</td>
+                      <td className="px-5 py-4">
+                        {a.appointment_images && a.appointment_images.length > 0 ? (
+                          <div className="flex items-center -space-x-2">
+                            {a.appointment_images.slice(0, 3).map((img, i) => (
+                              <button
+                                key={img.id}
+                                type="button"
+                                onClick={() => dispatch(openImageLightbox({
+                                  images: a.appointment_images!.map(x => getAppointmentImageUrl(x.storage_path)),
+                                  index: i,
+                                }))}
+                                className="block"
+                              >
+                                <img src={getAppointmentImageUrl(img.storage_path)} alt="" className="w-8 h-8 object-cover rounded-lg border-2 border-white shadow-sm" />
+                              </button>
+                            ))}
+                            {a.appointment_images.length > 3 && (
+                              <span className="w-8 h-8 flex items-center justify-center rounded-lg bg-surface-100 border-2 border-white text-[10px] font-semibold text-ink-muted">
+                                +{a.appointment_images.length - 3}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-ink-subtle text-sm">—</span>
+                        )}
+                      </td>
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-2">
                           <EditBtn id={a.id} />

@@ -1,13 +1,16 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { createClient } from '@/lib/supabase';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { closeAppointmentModal } from '@/store/slices/uiSlice';
 import { addAppointment, updateAppointment } from '@/store/slices/appointmentsSlice';
 import { WILAYAS } from '@/lib/constants'; // removed SERVICE_TYPES import
-import { Appointment } from '@/types';
+import { Appointment, AppointmentImage } from '@/types';
+import { APPOINTMENT_IMAGES_BUCKET, getAppointmentImageUrl } from '@/lib/storage';
 
 interface Props { userName: string; }
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 export default function AppointmentModal({ userName }: Props) {
   const dispatch = useAppDispatch();
@@ -28,6 +31,16 @@ export default function AppointmentModal({ userName }: Props) {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [warning, setWarning] = useState('');
+
+  const [existingImages, setExistingImages] = useState<AppointmentImage[]>([]);
+  const [removedImageIds, setRemovedImageIds] = useState<string[]>([]);
+  const [newFiles, setNewFiles] = useState<File[]>([]);
+
+  const newFilePreviews = useMemo(() => newFiles.map(f => URL.createObjectURL(f)), [newFiles]);
+  useEffect(() => {
+    return () => newFilePreviews.forEach(url => URL.revokeObjectURL(url));
+  }, [newFilePreviews]);
 
   useEffect(() => {
     if (editItem) {
@@ -40,6 +53,7 @@ export default function AppointmentModal({ userName }: Props) {
         description: editItem.description ?? '',
         urgent: editItem.urgent ?? false,
       });
+      setExistingImages(editItem.appointment_images ?? []);
     } else {
       setForm({
         name: '',
@@ -50,27 +64,98 @@ export default function AppointmentModal({ userName }: Props) {
         description: '',
         urgent: false,
       });
+      setExistingImages([]);
     }
+    setRemovedImageIds([]);
+    setNewFiles([]);
     setError('');
+    setWarning('');
   }, [editId, open, defaultDate]);
+
+  const handleFilesSelected = (files: FileList | null) => {
+    if (!files) return;
+    const valid: File[] = [];
+    for (const file of Array.from(files)) {
+      if (!file.type.startsWith('image/')) {
+        setError(`"${file.name}" n'est pas une image.`);
+        continue;
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        setError(`"${file.name}" dépasse la taille maximale de 5 Mo.`);
+        continue;
+      }
+      valid.push(file);
+    }
+    if (valid.length) setNewFiles(prev => [...prev, ...valid]);
+  };
+
+  const removeExistingImage = (id: string) => {
+    setRemovedImageIds(prev => [...prev, id]);
+  };
+
+  const removeNewFile = (index: number) => {
+    setNewFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadNewFiles = async (appointmentId: string): Promise<AppointmentImage[]> => {
+    if (newFiles.length === 0) return [];
+    const uploaded: { storage_path: string }[] = [];
+    let failCount = 0;
+    for (const file of newFiles) {
+      const path = `${appointmentId}/${crypto.randomUUID()}-${file.name}`;
+      const { error: uploadError } = await supabase.storage.from(APPOINTMENT_IMAGES_BUCKET).upload(path, file);
+      if (uploadError) { failCount++; continue; }
+      uploaded.push({ storage_path: path });
+    }
+    if (failCount > 0) {
+      setWarning(`${failCount} image(s) n'ont pas pu être téléchargées.`);
+    }
+    if (uploaded.length === 0) return [];
+    const { data, error: insertError } = await supabase
+      .from('appointment_images')
+      .insert(uploaded.map(u => ({ appointment_id: appointmentId, storage_path: u.storage_path })))
+      .select();
+    if (insertError || !data) return [];
+    return data as AppointmentImage[];
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setWarning('');
 
     const payload = { ...form, date: form.urgent ? null : form.date, added_by: userName };
 
     if (editId) {
       const { data, error } = await supabase
         .from('appointments').update(payload).eq('id', editId).select().single();
-      if (error) { setError(error.message); }
-      else { dispatch(updateAppointment(data as Appointment)); dispatch(closeAppointmentModal()); }
+      if (error) { setError(error.message); setLoading(false); return; }
+
+      let finalImages = existingImages.filter(img => !removedImageIds.includes(img.id));
+
+      if (removedImageIds.length > 0) {
+        const { data: removedRows } = await supabase
+          .from('appointment_images').delete().in('id', removedImageIds).select();
+        const paths = (removedRows as AppointmentImage[] | null)?.map(r => r.storage_path) ?? [];
+        if (paths.length) await supabase.storage.from(APPOINTMENT_IMAGES_BUCKET).remove(paths);
+      }
+
+      const insertedImages = await uploadNewFiles(editId);
+      finalImages = [...finalImages, ...insertedImages];
+
+      dispatch(updateAppointment({ ...(data as Appointment), appointment_images: finalImages }));
+      dispatch(closeAppointmentModal());
     } else {
+      const newId = crypto.randomUUID();
       const { data, error } = await supabase
-        .from('appointments').insert(payload).select().single();
-      if (error) { setError(error.message); }
-      else { dispatch(addAppointment(data as Appointment)); dispatch(closeAppointmentModal()); }
+        .from('appointments').insert({ id: newId, ...payload }).select().single();
+      if (error) { setError(error.message); setLoading(false); return; }
+
+      const insertedImages = await uploadNewFiles(newId);
+
+      dispatch(addAppointment({ ...(data as Appointment), appointment_images: insertedImages }));
+      dispatch(closeAppointmentModal());
     }
     setLoading(false);
   };
@@ -151,6 +236,55 @@ export default function AppointmentModal({ userName }: Props) {
                 placeholder="Détails supplémentaires sur le rendez-vous..."
               />
             </div>
+            <div className="col-span-2">
+              <label className="label">Photos</label>
+              <label className="btn-secondary cursor-pointer inline-flex">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M4 4h16a1 1 0 011 1v14a1 1 0 01-1 1H4a1 1 0 01-1-1V5a1 1 0 011-1z" />
+                </svg>
+                Ajouter des photos
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={e => { handleFilesSelected(e.target.files); e.target.value = ''; }}
+                />
+              </label>
+
+              {(existingImages.filter(img => !removedImageIds.includes(img.id)).length > 0 || newFiles.length > 0) && (
+                <div className="flex gap-2 flex-wrap mt-3">
+                  {existingImages.filter(img => !removedImageIds.includes(img.id)).map(img => (
+                    <div key={img.id} className="relative w-16 h-16 group">
+                      <img src={getAppointmentImageUrl(img.storage_path)} alt="" className="w-16 h-16 object-cover rounded-xl border border-surface-200" />
+                      <button
+                        type="button"
+                        onClick={() => removeExistingImage(img.id)}
+                        className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center shadow-sm"
+                      >
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                  {newFiles.map((file, i) => (
+                    <div key={i} className="relative w-16 h-16 group">
+                      <img src={newFilePreviews[i]} alt="" className="w-16 h-16 object-cover rounded-xl border border-surface-200" />
+                      <button
+                        type="button"
+                        onClick={() => removeNewFile(i)}
+                        className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center shadow-sm"
+                      >
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
           <div className="p-3 bg-surface-50 rounded-xl flex items-center gap-2 text-xs text-ink-muted">
             <svg className="w-4 h-4 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -159,6 +293,7 @@ export default function AppointmentModal({ userName }: Props) {
             Ajouté par : <span className="font-semibold text-ink">{userName}</span>
           </div>
           {error && <p className="text-red-600 text-sm bg-red-50 p-3 rounded-xl">{error}</p>}
+          {warning && <p className="text-orange-600 text-sm bg-orange-50 p-3 rounded-xl">{warning}</p>}
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={() => dispatch(closeAppointmentModal())} className="btn-secondary flex-1 justify-center">Annuler</button>
             <button type="submit" className="btn-primary flex-1 justify-center" disabled={loading}>

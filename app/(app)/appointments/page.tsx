@@ -4,7 +4,7 @@ import AppointmentsClient from './AppointmentsClient';
 export default async function AppointmentsPage() {
   const supabase =  await  createServerSupabaseClient();
 const [{ data: appointments }, { data: { user } }] = await Promise.all([
-  supabase.from('appointments').select('*').order('date', { ascending: false }),
+  supabase.from('appointments').select('*, appointment_images(*)').is('deleted_at', null).order('date', { ascending: false }),
   supabase.auth.getUser(),
 ]);
 const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Utilisateur';
